@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { createOrder } from '../../../actions/order';
+import { createOrder } from '../../../../actions/order';
 import { ShoppingCart, Plus, Minus, X } from 'lucide-react';
 
 type Product = { id: string; name: string; price: number; stock: number };
