@@ -5,9 +5,27 @@ import { useRouter } from 'next/navigation';
 import { createOrder } from '../../../../actions/order';
 import { ShoppingCart, Plus, Minus, X } from 'lucide-react';
 
-type Product = { id: string; name: string; price: number; stock: number };
-type Customer = { id: string; name: string };
-type CartItem = Product & { quantity: number };
+type Product = {
+  id: string;
+  name: string;
+  price: any;
+  stock: number;
+  [key: string]: any;
+};
+
+type Customer = {
+  id: string;
+  name: string;
+  [key: string]: any;
+};
+
+type CartItem = {
+  id: string;
+  name: string;
+  price: number;
+  stock: number;
+  quantity: number;
+};
 
 export default function POSClient({ products, customers }: { products: Product[], customers: Customer[] }) {
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -16,12 +34,13 @@ export default function POSClient({ products, customers }: { products: Product[]
   const router = useRouter();
 
   const addToCart = (product: Product) => {
+    const numPrice = Number(product.price);
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
         return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
       }
-      return [...prev, { ...product, quantity: 1 }];
+      return [...prev, { id: product.id, name: product.name, price: numPrice, stock: product.stock, quantity: 1 }];
     });
   };
 
@@ -122,7 +141,7 @@ export default function POSClient({ products, customers }: { products: Product[]
                     <Minus className="w-4 h-4" />
                   </button>
                   <span className="text-sm font-bold w-6 text-center">{item.quantity}</span>
-                  <button onClick={() => addToCart(item)} className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors">
+                  <button onClick={() => addToCart({ id: item.id, name: item.name, price: item.price, stock: item.stock })} className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors">
                     <Plus className="w-4 h-4" />
                   </button>
                   <button onClick={() => removeFromCart(item.id)} className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 ml-2 transition-colors">
