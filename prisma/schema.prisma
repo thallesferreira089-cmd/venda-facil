@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  stores    Store[]
+}
+
+model Store {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  segment   String?
+  logo      String?
+  currency  String   @default("BRL")
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  products        Product[]
+  customers       Customer[]
+  orders          Order[]
+  expenses        Expense[]
+  stockMovements  StockMovement[]
+}
+
+model Product {
+  id           String   @id @default(cuid())
+  storeId      String
+  name         String
+  sku          String?
+  category     String?
+  description  String?
+  image        String?
+  costPrice    Decimal  @default(0.00)
+  salePrice    Decimal
+  stock        Int      @default(0)
+  minimumStock Int      @default(5)
+  status       String   @default("ACTIVE")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  store        Store    @relation(fields: [storeId], references: [id])
+  orderItems   OrderItem[]
+  movements    StockMovement[]
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  storeId   String
+  name      String
+  phone     String?
+  email     String?
+  cpf       String?
+  address   String?
+  notes     String?
+  createdAt DateTime @default(now())
+  store     Store    @relation(fields: [storeId], references: [id])
+  orders    Order[]
+}
+
+model Order {
+  id            String   @id @default(cuid())
+  storeId       String
+  customerId    String?
+  status        String   @default("NEW")
+  paymentMethod String?
+  subtotal      Decimal  @default(0.00)
+  discount      Decimal  @default(0.00)
+  shipping      Decimal  @default(0.00)
+  total         Decimal  @default(0.00)
+  totalCost     Decimal  @default(0.00)
+  profit        Decimal  @default(0.00)
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  store         Store    @relation(fields: [storeId], references: [id])
+  customer      Customer? @relation(fields: [customerId], references: [id])
+  items         OrderItem[]
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  unitPrice Decimal
+  unitCost  Decimal
+  total     Decimal
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id])
+}
+
+model Expense {
+  id        String   @id @default(cuid())
+  storeId   String
+  name      String
+  category  String
+  amount    Decimal
+  date      DateTime
+  notes     String?
+  createdAt DateTime @default(now())
+  store     Store    @relation(fields: [storeId], references: [id])
+}
+
+model StockMovement {
+  id        String   @id @default(cuid())
+  storeId   String
+  productId String
+  type      String
+  quantity  Int
+  reason    String?
+  createdAt DateTime @default(now())
+  store     Store    @relation(fields: [storeId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+}
