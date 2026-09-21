@@ -2,7 +2,7 @@ import { prisma } from '../../../lib/prisma';
 import { getSession } from '../../../lib/auth';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { Trash2 } from 'lucide-react'; // Ícone do lixo
+import { Trash2 } from 'lucide-react';
 
 export default async function ProductsPage() {
   const session = await getSession();
@@ -49,7 +49,7 @@ export default async function ProductsPage() {
         <form action={addProduct} className="space-y-4">
           <input required type="text" name="name" placeholder="Nome do produto" className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none" />
           <div className="grid grid-cols-2 gap-4">
-            <input type="number" step="0.01" name="cost" placeholder="Preço de custo" className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none" />
+            <input type="number" step="0.01" name="cost" placeholder="Preço de custo (opcional)" className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none" />
             <input required type="number" step="0.01" name="price" placeholder="Preço de venda" className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none" />
           </div>
           <input required type="number" name="stock" placeholder="Estoque inicial" className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none" />
@@ -66,13 +66,13 @@ export default async function ProductsPage() {
             <div>
               <p className="font-bold text-gray-900">{product.name}</p>
               <p className="text-xs text-gray-500 mt-1">
-                Estoque: {product.stock} {product.stock <= 5 && <span className="text-red-500">- baixo</span>}
+                Estoque: {product.stock} {product.stock <= 5 && <span className="text-red-500 font-semibold">- baixo</span>}
               </p>
             </div>
             <div className="flex items-center gap-4">
               <p className="font-bold text-gray-900">R$ {Number(product.price).toFixed(2)}</p>
               
-              {/* O BOTÃO DE APAGAR NASCE AQUI */}
+              {/* Botão de Apagar */}
               <form action={deleteProduct}>
                 <input type="hidden" name="id" value={product.id} />
                 <button type="submit" className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Apagar">
