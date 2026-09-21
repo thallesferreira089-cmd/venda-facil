@@ -5,20 +5,6 @@ import { useRouter } from 'next/navigation';
 import { createOrder } from '../../../../actions/order';
 import { ShoppingCart, Plus, Minus, X } from 'lucide-react';
 
-type Product = {
-  id: string;
-  name: string;
-  price: any;
-  stock: number;
-  [key: string]: any;
-};
-
-type Customer = {
-  id: string;
-  name: string;
-  [key: string]: any;
-};
-
 type CartItem = {
   id: string;
   name: string;
@@ -27,13 +13,13 @@ type CartItem = {
   quantity: number;
 };
 
-export default function POSClient({ products, customers }: { products: Product[], customers: Customer[] }) {
+export default function POSClient({ products, customers }: { products: any[], customers: any[] }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerId, setCustomerId] = useState<string>('');
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: any) => {
     const numPrice = Number(product.price);
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
