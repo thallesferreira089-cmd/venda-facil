@@ -1,5 +1,5 @@
-import { prisma } from '../../../lib/prisma';
-import { getSession } from '../../../lib/auth';
+import { prisma } from '../../lib/prisma';
+import { getSession } from '../../lib/auth';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { Trash2 } from 'lucide-react';
@@ -13,7 +13,6 @@ export default async function ProductsPage() {
     orderBy: { createdAt: 'desc' }
   });
 
-  // Ação para adicionar o produto ajustada para aceitar os campos da base de dados
   async function addProduct(formData: FormData) {
     'use server';
     const session = await getSession();
@@ -24,14 +23,12 @@ export default async function ProductsPage() {
     const costVal = formData.get('cost') ? Number(formData.get('cost')) : undefined;
     const stockVal = Number(formData.get('stock'));
 
-    // Criamos o objeto de dados dinamicamente para evitar conflitos no Prisma
     const dataToAdd: any = {
       name,
       stock: stockVal,
       storeId: session.storeId
     };
 
-    // Tenta guardar no campo price ou sellPrice se existir
     if ('sellPrice' in (prisma.product as any)) {
       dataToAdd.sellPrice = priceVal;
     } else {
@@ -50,7 +47,6 @@ export default async function ProductsPage() {
     revalidatePath('/products');
   }
 
-  // Ação para apagar o produto
   async function deleteProduct(formData: FormData) {
     'use server';
     const id = formData.get('id') as string;
@@ -63,7 +59,6 @@ export default async function ProductsPage() {
     <div className="p-6 max-w-4xl">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Produtos</h1>
 
-      {/* Formulário Novo Produto */}
       <div className="bg-white p-4 rounded-xl border border-gray-200 mb-6 shadow-sm">
         <h2 className="font-bold text-gray-900 mb-4">Novo produto</h2>
         <form action={addProduct} className="space-y-4">
@@ -79,7 +74,6 @@ export default async function ProductsPage() {
         </form>
       </div>
 
-      {/* Lista de Produtos com o Botão de Apagar */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm divide-y divide-gray-100">
         {products.map((product: any) => {
           const displayPrice = product.sellPrice ?? product.price ?? 0;
@@ -94,7 +88,6 @@ export default async function ProductsPage() {
               <div className="flex items-center gap-4">
                 <p className="font-bold text-gray-900">R$ {Number(displayPrice).toFixed(2)}</p>
                 
-                {/* Botão de Apagar */}
                 <form action={deleteProduct}>
                   <input type="hidden" name="id" value={product.id} />
                   <button type="submit" className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Apagar">
