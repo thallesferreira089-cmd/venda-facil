@@ -25,6 +25,6 @@ export async function updateStoreSettings(formData: FormData): Promise<void> {
     revalidatePath('/menu');
     revalidatePath('/admin');
   } catch (error) {
-    console.error('Erro ao atualizar configurações da loja:', error);
+    console.error('Erro ao atualizar loja:', error);
   }
 }
