@@ -3,11 +3,17 @@ import { getSession } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { Store, Users, ShoppingBag, Calendar } from 'lucide-react';
 
+// ✉️ COLOQUE AQUI O SEU E-MAIL DE ADMINISTRADOR
+const ADMIN_EMAIL = "thallesferreira089@gmail.com";
+
 export default async function AdminDashboardPage() {
   const session = await getSession();
-  if (!session?.storeId) redirect('/login');
 
-  // Buscar todas as lojas cadastradas com a contagem de produtos e vendas
+  // Bloqueia a entrada se não estiver logado ou se o e-mail não for o do admin
+  if (!session || session.email !== ADMIN_EMAIL) {
+    redirect('/');
+  }
+
   const stores = await prisma.store.findMany({
     orderBy: { createdAt: 'desc' },
     include: {
@@ -30,7 +36,7 @@ export default async function AdminDashboardPage() {
         </p>
       </div>
 
-      {/* Cards de Métricas Gerais */}
+      {/* Cards de Métricas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
@@ -67,7 +73,7 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Tabela de Contas / Lojas */}
+      {/* Tabela de Contas */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="p-5 border-b border-gray-100">
           <h2 className="font-bold text-gray-900">Contas Criadas ({stores.length})</h2>

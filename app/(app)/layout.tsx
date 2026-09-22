@@ -1,11 +1,20 @@
 import Link from 'next/link';
-import { Home, Package, Users, ShoppingCart, Menu } from 'lucide-react';
+import { Home, Package, Users, ShoppingCart, Menu, ShieldCheck } from 'lucide-react';
+import { getSession } from '@/lib/auth';
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+// ✉️ COLOQUE AQUI O SEU E-MAIL DE ADMINISTRADOR
+const ADMIN_EMAIL = "thallesferreira089@gmail.com";
+
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const session = await getSession();
+  
+  // Verifica se o email retornado pela sessão é igual ao seu email
+  const isAdmin = session?.email === ADMIN_EMAIL;
+
   return (
     <div className="min-h-screen bg-gray-50 md:flex">
       
-      {/* 🖥️ MENU LATERAL PARA COMPUTADOR (Escondido no telemóvel) */}
+      {/* 🖥️ MENU LATERAL PARA COMPUTADOR */}
       <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 p-4 fixed h-full z-50">
         <div className="mb-8 p-2">
           <h1 className="text-2xl font-bold text-blue-600">VendaFácil</h1>
@@ -24,6 +33,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <Link href="/customers" className="flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 text-gray-700 hover:text-blue-600 font-medium transition-colors">
             <Users className="w-5 h-5" /> Clientes
           </Link>
+
+          {/* 🔒 LINK EXCLUSIVO PARA O EMAIL DE ADMIN */}
+          {isAdmin && (
+            <Link href="/admin" className="flex items-center gap-3 p-3 rounded-xl hover:bg-purple-50 text-purple-700 font-bold transition-colors">
+              <ShieldCheck className="w-5 h-5 text-purple-600" /> Painel Admin
+            </Link>
+          )}
         </nav>
 
         <div className="mt-auto">
@@ -38,7 +54,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      {/* 📱 MENU DE FUNDO PARA TELEMÓVEL (Escondido no Computador) */}
+      {/* 📱 MENU PARA TELEMÓVEL */}
       <nav className="md:hidden fixed bottom-0 w-full bg-white border-t border-gray-200 flex justify-around items-center p-2 pb-safe z-50">
         <Link href="/" className="flex flex-col items-center p-2 text-gray-500 hover:text-blue-600">
           <Home className="w-6 h-6" />
@@ -59,10 +75,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <Users className="w-6 h-6" />
           <span className="text-[10px] mt-1 font-medium">Clientes</span>
         </Link>
-        <Link href="/menu" className="flex flex-col items-center p-2 text-gray-500 hover:text-blue-600">
-          <Menu className="w-6 h-6" />
-          <span className="text-[10px] mt-1 font-medium">Menu</span>
-        </Link>
+
+        {isAdmin ? (
+          <Link href="/admin" className="flex flex-col items-center p-2 text-purple-600 font-bold">
+            <ShieldCheck className="w-6 h-6" />
+            <span className="text-[10px] mt-1">Admin</span>
+          </Link>
+        ) : (
+          <Link href="/menu" className="flex flex-col items-center p-2 text-gray-500 hover:text-blue-600">
+            <Menu className="w-6 h-6" />
+            <span className="text-[10px] mt-1 font-medium">Menu</span>
+          </Link>
+        )}
       </nav>
 
     </div>
