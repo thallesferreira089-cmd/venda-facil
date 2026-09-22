@@ -3,7 +3,7 @@ import { Home, Package, Users, ShoppingCart, Menu, ShieldCheck } from 'lucide-re
 import { getSession } from '@/lib/auth';
 
 // 🔑 COLOQUE AQUI O ID DA SUA LOJA ADMIN
-const ADMIN_STORE_ID = "SEU_STORE_ID_AQUI";
+const ADMIN_STORE_ID = "cmu73km7a000127eluyfhqmfw";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
