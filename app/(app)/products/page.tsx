@@ -2,18 +2,61 @@ import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Package, Edit } from 'lucide-react';
+import { ShoppingCart, Package, Users, ArrowUpRight, DollarSign, Calendar, TrendingUp } from 'lucide-react';
 
-export default async function ProductsPage() {
+export default async function HomePage() {
   const session = await getSession();
 
   if (!session) redirect('/login');
   if (!session.storeId) redirect('/setup');
 
-  const products = await prisma.product.findMany({
-    where: { storeId: session.storeId },
-    orderBy: { createdAt: 'desc' },
-  });
+  const now = new Date();
+  
+  // Início do dia atual (00:00:00)
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  
+  // Início do mês atual (1º dia às 00:00:00)
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  // Consultas ao banco de dados em paralelo
+  const [
+    productsCount,
+    customersCount,
+    ordersCount,
+    salesToday,
+    salesMonth,
+    totalRevenueAggregate,
+  ] = await Promise.all([
+    prisma.product.count({ where: { storeId: session.storeId } }),
+    prisma.customer.count({ where: { storeId: session.storeId } }),
+    prisma.order.count({ where: { storeId: session.storeId } }),
+    
+    // Vendas realizadas hoje
+    prisma.order.aggregate({
+      where: {
+        storeId: session.storeId,
+        createdAt: { gte: startOfDay },
+      },
+      _sum: { total: true },
+      _count: { id: true },
+    }),
+
+    // Vendas realizadas este mês
+    prisma.order.aggregate({
+      where: {
+        storeId: session.storeId,
+        createdAt: { gte: startOfMonth },
+      },
+      _sum: { total: true },
+      _count: { id: true },
+    }),
+
+    // Faturamento total acumulado
+    prisma.order.aggregate({
+      where: { storeId: session.storeId },
+      _sum: { total: true },
+    }),
+  ]);
 
   const formatCurrency = (val: any) => {
     const numericValue = val ? Number(val) : 0;
@@ -25,82 +68,121 @@ export default async function ProductsPage() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Produtos</h1>
-          <p className="text-sm text-gray-500">
-            Gerencie o catálogo de produtos da sua loja.
-          </p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">
+          Olá, {session.name || 'Bem-vindo'} 👋
+        </h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Acompanhe o resumo da sua loja em tempo real.
+        </p>
+      </div>
+
+      {/* Ações Rápidas e Resumo Principal */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Link
-          href="/products/new"
-          className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2"
+          href="/orders/new"
+          className="bg-blue-600 text-white p-5 rounded-2xl shadow-sm hover:bg-blue-700 transition-colors flex items-center justify-between"
         >
-          <Plus className="w-4 h-4" /> Novo Produto
+          <div>
+            <p className="text-xs text-blue-100 font-medium">Ação Rápida</p>
+            <p className="text-lg font-bold mt-1">Nova Venda</p>
+          </div>
+          <div className="p-3 bg-white/10 rounded-xl">
+            <ShoppingCart className="w-6 h-6" />
+          </div>
+        </Link>
+
+        <Link
+          href="/products"
+          className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:border-gray-200 transition-colors flex items-center justify-between"
+        >
+          <div>
+            <p className="text-xs text-gray-500 font-medium">Total Produtos</p>
+            <p className="text-2xl font-bold text-gray-900">{productsCount}</p>
+          </div>
+          <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+            <Package className="w-6 h-6" />
+          </div>
+        </Link>
+
+        <Link
+          href="/customers"
+          className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:border-gray-200 transition-colors flex items-center justify-between"
+        >
+          <div>
+            <p className="text-xs text-gray-500 font-medium">Total Clientes</p>
+            <p className="text-2xl font-bold text-gray-900">{customersCount}</p>
+          </div>
+          <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
+            <Users className="w-6 h-6" />
+          </div>
         </Link>
       </div>
 
-      {products.length === 0 ? (
-        <div className="bg-white border border-gray-100 rounded-2xl p-12 text-center space-y-3">
-          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto">
-            <Package className="w-6 h-6" />
+      {/* Métricas Financeiras e Períodos */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Vendas de Hoje */}
+        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Vendas Hoje</span>
+            <div className="p-2 bg-green-50 text-green-600 rounded-lg">
+              <Calendar className="w-4 h-4" />
+            </div>
           </div>
-          <h3 className="text-base font-bold text-gray-900">Nenhum produto cadastrado</h3>
-          <p className="text-sm text-gray-500 max-w-sm mx-auto">
-            Adicione os seus produtos para começar a registar vendas e controlar o seu estoque.
+          <p className="text-2xl font-extrabold text-gray-900">
+            {formatCurrency(salesToday._sum.total)}
           </p>
-          <Link
-            href="/products/new"
-            className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors mt-2"
-          >
-            <Plus className="w-4 h-4" /> Criar Primeiro Produto
-          </Link>
+          <p className="text-xs text-gray-500 font-medium">
+            {salesToday._count.id} {salesToday._count.id === 1 ? 'venda realizada' : 'vendas realizadas'}
+          </p>
         </div>
-      ) : (
-        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-gray-100 bg-gray-50/50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                <th className="p-4">Produto</th>
-                <th className="p-4">Preço</th>
-                <th className="p-4">Estoque</th>
-                <th className="p-4 text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 text-sm">
-              {products.map((product: any) => (
-                <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="p-4 font-medium text-gray-900">{product.name}</td>
-                  <td className="p-4 text-gray-700 font-semibold">
-                    {formatCurrency(product.price ?? product.unitPrice ?? 0)}
-                  </td>
-                  <td className="p-4">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        (product.stock ?? 0) > 5
-                          ? 'bg-green-50 text-green-700'
-                          : (product.stock ?? 0) > 0
-                          ? 'bg-yellow-50 text-yellow-700'
-                          : 'bg-red-50 text-red-700'
-                      }`}
-                    >
-                      {product.stock ?? 0} em estoque
-                    </span>
-                  </td>
-                  <td className="p-4 text-right space-x-2">
-                    <Link
-                      href={`/products/${product.id}/edit`}
-                      className="p-2 text-gray-400 hover:text-blue-600 inline-block transition-colors"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+        {/* Vendas do Mês */}
+        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Vendas no Mês</span>
+            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+          </div>
+          <p className="text-2xl font-extrabold text-gray-900">
+            {formatCurrency(salesMonth._sum.total)}
+          </p>
+          <p className="text-xs text-gray-500 font-medium">
+            {salesMonth._count.id} {salesMonth._count.id === 1 ? 'venda este mês' : 'vendas este mês'}
+          </p>
         </div>
-      )}
+
+        {/* Faturamento Total */}
+        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Acumulado</span>
+            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+              <DollarSign className="w-4 h-4" />
+            </div>
+          </div>
+          <p className="text-2xl font-extrabold text-emerald-600">
+            {formatCurrency(totalRevenueAggregate._sum.total)}
+          </p>
+          <p className="text-xs text-gray-500 font-medium">
+            Em {ordersCount} {ordersCount === 1 ? 'pedido total' : 'pedidos totais'}
+          </p>
+        </div>
+      </div>
+
+      {/* Resumo e Acesso Rápido a Pedidos */}
+      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+        <div>
+          <h2 className="font-bold text-gray-900">Total de Pedidos Registados</h2>
+          <p className="text-3xl font-extrabold text-blue-600 mt-2">{ordersCount}</p>
+        </div>
+        <Link
+          href="/orders/new"
+          className="flex items-center gap-1 text-sm font-bold text-blue-600 hover:text-blue-700"
+        >
+          Registar Venda <ArrowUpRight className="w-4 h-4" />
+        </Link>
+      </div>
     </div>
   );
 }
