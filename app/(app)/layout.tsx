@@ -2,20 +2,18 @@ import Link from 'next/link';
 import { Home, Package, Users, ShoppingCart, Menu, ShieldCheck } from 'lucide-react';
 import { getSession } from '@/lib/auth';
 
-// 🔑 COLOQUE AQUI O ID DA SUA LOJA ADMIN
+// 🔑 ID DA SUA LOJA ADMIN
 const ADMIN_STORE_ID = "cmu73km7a000127eluyfhqmfw";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
-  
-  // Verifica se o storeId retornado pela sessão é igual ao seu storeId de admin
   const isAdmin = session?.storeId === ADMIN_STORE_ID;
 
   return (
-    <div className="min-h-screen bg-gray-50 md:flex">
+    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
       
-      {/* 🖥️ MENU LATERAL PARA COMPUTADOR */}
-      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 p-4 fixed h-full z-50">
+      {/* 🖥️ MENU LATERAL FIXO À ESQUERDA (Desktop) */}
+      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 p-4 fixed left-0 top-0 bottom-0 h-full z-40">
         <div className="mb-8 p-2">
           <h1 className="text-2xl font-bold text-blue-600">VendaFácil</h1>
         </div>
@@ -34,7 +32,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <Users className="w-5 h-5" /> Clientes
           </Link>
 
-          {/* 🔒 LINK EXCLUSIVO PARA O STORE ID DE ADMIN */}
           {isAdmin && (
             <Link href="/admin" className="flex items-center gap-3 p-3 rounded-xl hover:bg-purple-50 text-purple-700 font-bold transition-colors">
               <ShieldCheck className="w-5 h-5 text-purple-600" /> Painel Admin
@@ -49,13 +46,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
-      {/* 📄 ÁREA PRINCIPAL DAS PÁGINAS */}
-      <main className="flex-1 md:ml-64 pb-24 md:pb-8">
-        {children}
+      {/* 📄 ÁREA PRINCIPAL DAS PÁGINAS (Com margem esquerda idêntica à largura da sidebar) */}
+      <main className="flex-1 md:pl-64 w-full min-h-screen pb-24 md:pb-8">
+        <div className="p-4 md:p-6">
+          {children}
+        </div>
       </main>
 
-      {/* 📱 MENU PARA CELULAR */}
-      <nav className="md:hidden fixed bottom-0 w-full bg-white border-t border-gray-200 flex justify-around items-center p-2 pb-safe z-50">
+      {/* 📱 MENU DE FUNDO PARA TELEMÓVEL */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center p-2 pb-safe z-50">
         <Link href="/" className="flex flex-col items-center p-2 text-gray-500 hover:text-blue-600">
           <Home className="w-6 h-6" />
           <span className="text-[10px] mt-1 font-medium">Início</span>
