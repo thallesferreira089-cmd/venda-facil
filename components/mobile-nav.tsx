@@ -32,3 +32,13 @@ export function MobileNav() {
     </nav>
   );
 }
+import { ShieldCheck } from 'lucide-react';
+
+// Dentro dos seus links do menu, adicione este bloco:
+<Link
+  href="/admin"
+  className="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-xl transition-colors font-medium text-sm"
+>
+  <ShieldCheck className="w-5 h-5 text-gray-500" />
+  <span>Painel Admin</span>
+</Link>
