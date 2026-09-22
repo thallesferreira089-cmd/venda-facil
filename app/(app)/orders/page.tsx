@@ -58,11 +58,12 @@ export default async function HomePage() {
     }),
   ]);
 
-  const formatCurrency = (val: number | null) => {
+  const formatCurrency = (val: any) => {
+    const numericValue = val ? Number(val) : 0;
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
-    }).format(val || 0);
+    }).format(numericValue);
   };
 
   return (
