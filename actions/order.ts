@@ -9,24 +9,52 @@ export async function createOrder(data: { customerId?: string; total: number; it
   if (!session?.storeId) return { success: false, error: 'Não autorizado' };
 
   try {
+    // 1. Buscar os produtos no banco para pegar os preços (salePrice e costPrice) atualizados
+    const productIds = data.items.map(item => item.id);
+    const dbProducts = await prisma.product.findMany({
+      where: { id: { in: productIds }, storeId: session.storeId }
+    });
+
+    let totalCost = 0;
+
+    // 2. Mapear cada item com os campos exigidos pelo schema (unitPrice, unitCost, total)
+    const orderItemsData = data.items.map(item => {
+      const product = dbProducts.find(p => p.id === item.id);
+      const unitPrice = product ? Number(product.salePrice) : 0;
+      const unitCost = product ? Number(product.costPrice) : 0;
+      const itemTotal = unitPrice * item.quantity;
+
+      totalCost += unitCost * item.quantity;
+
+      return {
+        productId: item.id,
+        quantity: item.quantity,
+        unitPrice,
+        unitCost,
+        total: itemTotal
+      };
+    });
+
+    const calculatedProfit = data.total - totalCost;
+
+    // 3. Executar transação no Prisma
     await prisma.$transaction(async (tx) => {
-      // Usamos cast 'as any' no objeto data para que o TypeScript não trave o build da Vercel
+      // Criar a Ordem de Venda
       await tx.order.create({
         data: {
           storeId: session.storeId,
           customerId: data.customerId || null,
+          subtotal: data.total,
           total: data.total,
+          totalCost,
+          profit: calculatedProfit,
           items: {
-            create: data.items.map(item => ({
-              productId: item.id,
-              quantity: item.quantity,
-              price: 0
-            }))
+            create: orderItemsData
           }
-        } as any
+        }
       });
 
-      // Abate o estoque de cada produto
+      // Abater o estoque de cada produto vendido
       for (const item of data.items) {
         await tx.product.update({
           where: { id: item.id },
@@ -39,7 +67,7 @@ export async function createOrder(data: { customerId?: string; total: number; it
     revalidatePath('/products');
     return { success: true };
   } catch (error) {
-    console.error('Erro na venda:', error);
-    return { success: false, error: 'Erro ao criar pedido' };
+    console.error('Erro detalhado ao fechar venda:', error);
+    return { success: false, error: 'Erro ao fechar venda' };
   }
 }
