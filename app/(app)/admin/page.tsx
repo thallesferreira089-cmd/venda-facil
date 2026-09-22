@@ -3,14 +3,14 @@ import { getSession } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { Store, Users, ShoppingBag, Calendar } from 'lucide-react';
 
-// ✉️ COLOQUE AQUI O SEU E-MAIL DE ADMINISTRADOR
-const ADMIN_EMAIL = "thallesferreira089@gmail.com";
+// 🔑 COLOQUE AQUI O ID DA SUA LOJA ADMIN
+const ADMIN_STORE_ID = "cmu73km7a000127eluyfhqmfw";
 
 export default async function AdminDashboardPage() {
   const session = await getSession();
 
-  // Bloqueia a entrada se não estiver logado ou se o e-mail não for o do admin
-  if (!session || session.email !== ADMIN_EMAIL) {
+  // Bloqueia a entrada se não estiver logado ou se o storeId não for o do admin
+  if (!session?.storeId || session.storeId !== ADMIN_STORE_ID) {
     redirect('/');
   }
 
