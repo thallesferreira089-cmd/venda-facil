@@ -37,7 +37,7 @@ export default async function HomePage() {
         storeId: session.storeId,
         createdAt: { gte: startOfDay },
       },
-      _sum: { totalAmount: true },
+      _sum: { total: true },
       _count: { id: true },
     }),
 
@@ -47,14 +47,14 @@ export default async function HomePage() {
         storeId: session.storeId,
         createdAt: { gte: startOfMonth },
       },
-      _sum: { totalAmount: true },
+      _sum: { total: true },
       _count: { id: true },
     }),
 
     // Faturamento total acumulado
     prisma.order.aggregate({
       where: { storeId: session.storeId },
-      _sum: { totalAmount: true },
+      _sum: { total: true },
     }),
   ]);
 
@@ -129,7 +129,7 @@ export default async function HomePage() {
             </div>
           </div>
           <p className="text-2xl font-extrabold text-gray-900">
-            {formatCurrency(salesToday._sum.totalAmount)}
+            {formatCurrency(salesToday._sum.total)}
           </p>
           <p className="text-xs text-gray-500 font-medium">
             {salesToday._count.id} {salesToday._count.id === 1 ? 'venda realizada' : 'vendas realizadas'}
@@ -145,7 +145,7 @@ export default async function HomePage() {
             </div>
           </div>
           <p className="text-2xl font-extrabold text-gray-900">
-            {formatCurrency(salesMonth._sum.totalAmount)}
+            {formatCurrency(salesMonth._sum.total)}
           </p>
           <p className="text-xs text-gray-500 font-medium">
             {salesMonth._count.id} {salesMonth._count.id === 1 ? 'venda este mês' : 'vendas este mês'}
@@ -161,7 +161,7 @@ export default async function HomePage() {
             </div>
           </div>
           <p className="text-2xl font-extrabold text-emerald-600">
-            {formatCurrency(totalRevenueAggregate._sum.totalAmount)}
+            {formatCurrency(totalRevenueAggregate._sum.total)}
           </p>
           <p className="text-xs text-gray-500 font-medium">
             Em {ordersCount} {ordersCount === 1 ? 'pedido total' : 'pedidos totais'}
