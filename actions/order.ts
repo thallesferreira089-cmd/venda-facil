@@ -1,45 +1,45 @@
 'use server';
 
+import { prisma } from '@/lib/prisma';
+import { getSession } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
-import { prisma } from '../lib/prisma';
-import { getSession } from '../lib/auth';
 
-// Esta função recebe os dados do carrinho de compras
-export async function createOrder(orderData: { customerId?: string; total: number; items: { id: string; quantity: number }[] }) {
+export async function createOrder(data: { customerId?: string; total: number; items: { id: string; quantity: number }[] }) {
   const session = await getSession();
-  if (!session?.storeId) return { error: 'Não autorizado' };
+  if (!session?.storeId) return { success: false, error: 'Não autorizado' };
 
   try {
-    // 1. Regista a venda na base de dados
-    await prisma.order.create({
-      data: {
-        storeId: session.storeId,
-        customerId: orderData.customerId || null, // Associa ao cliente (se houver)
-        total: orderData.total,
-        status: 'COMPLETED',
-      }
-    });
-
-    // 2. Abate o stock de cada produto vendido automaticamente
-    for (const item of orderData.items) {
-      await prisma.product.update({
-        where: { id: item.id },
+    await prisma.$transaction(async (tx) => {
+      // Criar a ordem
+      const order = await tx.order.create({
         data: {
-          stock: {
-            decrement: item.quantity
+          storeId: session.storeId,
+          customerId: data.customerId,
+          total: data.total,
+          items: {
+            create: data.items.map(item => ({
+              productId: item.id,
+              quantity: item.quantity,
+              price: 0
+            }))
           }
         }
       });
-    }
 
-    // 3. Atualiza o Histórico, os Produtos e o Dashboard
+      // Abater stock
+      for (const item of data.items) {
+        await tx.product.update({
+          where: { id: item.id },
+          data: { stock: { decrement: item.quantity } }
+        });
+      }
+    });
+
     revalidatePath('/orders');
     revalidatePath('/products');
-    revalidatePath('/'); 
-    
     return { success: true };
   } catch (error) {
     console.error(error);
-    return { error: 'Erro ao registar a venda.' };
+    return { success: false, error: 'Erro ao criar pedido' };
   }
 }
