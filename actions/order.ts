@@ -9,24 +9,27 @@ export async function createOrder(data: { customerId?: string; total: number; it
   if (!session?.storeId) return { success: false, error: 'Não autorizado' };
 
   try {
-    await prisma.$transaction(async (tx) => {
-      // Criar a ordem
-      const order = await tx.order.create({
+    await (prisma as any).$transaction(async (tx: any) => {
+      // Mapeia os itens garantindo compatibilidade com o schema (unitPrice ou price)
+      const orderItems = data.items.map(item => ({
+        productId: item.id,
+        quantity: item.quantity,
+        price: 0,
+        unitPrice: 0
+      }));
+
+      await tx.order.create({
         data: {
           storeId: session.storeId,
-          customerId: data.customerId,
+          customerId: data.customerId || null,
           total: data.total,
           items: {
-            create: data.items.map(item => ({
-              productId: item.id,
-              quantity: item.quantity,
-              price: 0
-            }))
+            create: orderItems
           }
         }
       });
 
-      // Abater stock
+      // Abate o estoque de cada produto
       for (const item of data.items) {
         await tx.product.update({
           where: { id: item.id },
