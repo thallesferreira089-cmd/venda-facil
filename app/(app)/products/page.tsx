@@ -18,33 +18,17 @@ export default async function ProductsPage() {
     const session = await getSession();
     if (!session?.storeId) return;
     
-    const name = formData.get('name') as string;
-    const priceVal = Number(formData.get('price'));
-    const costVal = formData.get('cost') ? Number(formData.get('cost')) : undefined;
-    const stockVal = Number(formData.get('stock'));
-
-    const dataToAdd: any = {
-      name,
-      stock: stockVal,
-      storeId: session.storeId
-    };
-
-    if ('sellPrice' in (prisma.product as any)) {
-      dataToAdd.sellPrice = priceVal;
-    } else {
-      dataToAdd.price = priceVal;
-    }
-
-    if (costVal !== undefined) {
-      if ('costPrice' in (prisma.product as any)) dataToAdd.costPrice = costVal;
-      else if ('cost' in (prisma.product as any)) dataToAdd.cost = costVal;
-    }
-
-    await (prisma.product.create as any)({
-      data: dataToAdd
+    await prisma.product.create({
+      data: {
+        name: formData.get('name') as string,
+        price: Number(formData.get('price')),
+        stock: Number(formData.get('stock')),
+        storeId: session.storeId
+      }
     });
 
     revalidatePath('/products');
+    revalidatePath('/orders/new');
   }
 
   async function deleteProduct(formData: FormData) {
@@ -59,6 +43,7 @@ export default async function ProductsPage() {
     <div className="p-6 max-w-4xl">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Produtos</h1>
 
+      {/* Formulário Novo Produto */}
       <div className="bg-white p-4 rounded-xl border border-gray-200 mb-6 shadow-sm">
         <h2 className="font-bold text-gray-900 mb-4">Novo produto</h2>
         <form action={addProduct} className="space-y-4">
@@ -74,30 +59,28 @@ export default async function ProductsPage() {
         </form>
       </div>
 
+      {/* Lista de Produtos */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm divide-y divide-gray-100">
-        {products.map((product: any) => {
-          const displayPrice = product.sellPrice ?? product.price ?? 0;
-          return (
-            <div key={product.id} className="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
-              <div>
-                <p className="font-bold text-gray-900">{product.name}</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Estoque: {product.stock} {product.stock <= 5 && <span className="text-red-500 font-semibold">- baixo</span>}
-                </p>
-              </div>
-              <div className="flex items-center gap-4">
-                <p className="font-bold text-gray-900">R$ {Number(displayPrice).toFixed(2)}</p>
-                
-                <form action={deleteProduct}>
-                  <input type="hidden" name="id" value={product.id} />
-                  <button type="submit" className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Apagar">
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                </form>
-              </div>
+        {products.map((product) => (
+          <div key={product.id} className="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
+            <div>
+              <p className="font-bold text-gray-900">{product.name}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Estoque: {product.stock} {product.stock <= 5 && <span className="text-red-500 font-semibold">- baixo</span>}
+              </p>
             </div>
-          );
-        })}
+            <div className="flex items-center gap-4">
+              <p className="font-bold text-gray-900">R$ {Number(product.price).toFixed(2)}</p>
+              
+              <form action={deleteProduct}>
+                <input type="hidden" name="id" value={product.id} />
+                <button type="submit" className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Apagar">
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </form>
+            </div>
+          </div>
+        ))}
         {products.length === 0 && (
           <div className="p-6 text-center text-gray-500">Nenhum produto cadastrado.</div>
         )}
