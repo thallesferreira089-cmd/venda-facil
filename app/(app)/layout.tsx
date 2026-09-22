@@ -6,8 +6,16 @@ import { getSession } from '@/lib/auth';
 const ADMIN_STORE_ID = "cmu73km7a000127eluyfhqmfw";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const session = await getSession();
-  const isAdmin = session?.storeId === ADMIN_STORE_ID;
+  // Tratamento seguro caso getSession() falhe ou retorne nulo
+  let session = null;
+  try {
+    session = await getSession();
+  } catch (error) {
+    console.error("Erro ao carregar sessão no layout:", error);
+  }
+
+  // Verifica se é admin de forma totalmente segura
+  const isAdmin = Boolean(session?.storeId && session.storeId === ADMIN_STORE_ID);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
@@ -46,14 +54,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
-      {/* 📄 ÁREA PRINCIPAL DAS PÁGINAS (Com margem esquerda idêntica à largura da sidebar) */}
+      {/* 📄 ÁREA PRINCIPAL */}
       <main className="flex-1 md:pl-64 w-full min-h-screen pb-24 md:pb-8">
         <div className="p-4 md:p-6">
           {children}
         </div>
       </main>
 
-      {/* 📱 MENU DE FUNDO PARA TELEMÓVEL */}
+      {/* 📱 MENU DE FUNDO PARA CELULAR */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center p-2 pb-safe z-50">
         <Link href="/" className="flex flex-col items-center p-2 text-gray-500 hover:text-blue-600">
           <Home className="w-6 h-6" />
