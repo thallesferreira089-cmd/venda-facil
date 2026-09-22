@@ -4,16 +4,14 @@ import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 
-export async function updateStoreSettings(formData: FormData) {
+export async function updateStoreSettings(formData: FormData): Promise<void> {
   const session = await getSession();
-  if (!session?.storeId) return { success: false, error: 'Não autorizado' };
+  if (!session?.storeId) return;
 
   const name = formData.get('name') as string;
   const segment = formData.get('segment') as string;
 
-  if (!name || name.trim() === '') {
-    return { success: false, error: 'O nome da loja é obrigatório.' };
-  }
+  if (!name || name.trim() === '') return;
 
   try {
     await prisma.store.update({
@@ -26,9 +24,7 @@ export async function updateStoreSettings(formData: FormData) {
 
     revalidatePath('/menu');
     revalidatePath('/admin');
-    return { success: true };
   } catch (error) {
     console.error('Erro ao atualizar configurações da loja:', error);
-    return { success: false, error: 'Erro ao guardar as alterações.' };
   }
 }
