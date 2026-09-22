@@ -2,7 +2,7 @@ import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Package, Edit, Trash2 } from 'lucide-react';
+import { Plus, Package, Edit } from 'lucide-react';
 
 export default async function ProductsPage() {
   const session = await getSession();
@@ -47,7 +47,7 @@ export default async function ProductsPage() {
           </div>
           <h3 className="text-base font-bold text-gray-900">Nenhum produto cadastrado</h3>
           <p className="text-sm text-gray-500 max-w-sm mx-auto">
-            Adicione os seus produtos para começar a registar vendas e controlar o seu stock.
+            Adicione os seus produtos para começar a registar vendas e controlar o seu estoque.
           </p>
           <Link
             href="/products/new"
@@ -63,28 +63,28 @@ export default async function ProductsPage() {
               <tr className="border-b border-gray-100 bg-gray-50/50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 <th className="p-4">Produto</th>
                 <th className="p-4">Preço</th>
-                <th className="p-4">Stock</th>
+                <th className="p-4">Estoque</th>
                 <th className="p-4 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-sm">
-              {products.map((product) => (
+              {products.map((product: any) => (
                 <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="p-4 font-medium text-gray-900">{product.name}</td>
                   <td className="p-4 text-gray-700 font-semibold">
-                    {formatCurrency(product.price)}
+                    {formatCurrency(product.price ?? product.unitPrice ?? 0)}
                   </td>
                   <td className="p-4">
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        product.stock > 5
+                        (product.stock ?? 0) > 5
                           ? 'bg-green-50 text-green-700'
-                          : product.stock > 0
+                          : (product.stock ?? 0) > 0
                           ? 'bg-yellow-50 text-yellow-700'
                           : 'bg-red-50 text-red-700'
                       }`}
                     >
-                      {product.stock} em stock
+                      {product.stock ?? 0} em estoque
                     </span>
                   </td>
                   <td className="p-4 text-right space-x-2">
