@@ -6,12 +6,12 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { createSession, destroySession, getSession } from '@/lib/auth';
 
- const loginSchema = z.object({
+const loginSchema = z.object({
   email: z.string().email('E-mail inválido'),
   password: z.string().min(6, 'A senha deve ter no mínimo 6 caracteres'),
 });
 
- const registerSchema = z.object({
+const registerSchema = z.object({
   name: z.string().min(2, 'Nome é obrigatório'),
   storeName: z.string().min(2, 'Nome da loja é obrigatório'),
   email: z.string().email('E-mail inválido'),
@@ -39,7 +39,6 @@ export async function loginAction(formData: FormData) {
     include: { stores: { take: 1, orderBy: { createdAt: 'asc' } } },
   });
 
-  // Mensagem genérica de propósito: não revelar se o e-mail existe ou não.
   if (!user) {
     redirectWithError('/login', 'E-mail ou senha incorretos');
   }
@@ -51,14 +50,26 @@ export async function loginAction(formData: FormData) {
 
   const store = user.stores[0];
 
+  // Se não houver loja criada, envia para a configuração da loja
+  if (!store) {
+    await createSession({
+      userId: user.id,
+      storeId: '',
+      email: user.email,
+      name: user.name,
+    });
+    redirect('/setup');
+  }
+
+  // Se a loja existir, guarda o storeId válido e entra na aplicação
   await createSession({
     userId: user.id,
-    storeId: store?.id ?? '',
+    storeId: store.id,
     email: user.email,
     name: user.name,
   });
 
-  redirect(store ? '/' : '/setup');
+  redirect('/');
 }
 
 export async function registerAction(formData: FormData) {
