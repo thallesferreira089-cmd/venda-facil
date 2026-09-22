@@ -34,47 +34,44 @@ export async function loginAction(formData: FormData) {
 
   const { email, password } = parsed.data;
 
+  let user;
   try {
-    const user = await prisma.user.findUnique({
+    user = await prisma.user.findUnique({
       where: { email },
       include: { stores: { take: 1, orderBy: { createdAt: 'asc' } } },
     });
+  } catch (dbError) {
+    console.error('Erro de conexão ao banco de dados no Login:', dbError);
+    redirectWithError('/login', 'Falha ao conectar ao banco de dados. Tente novamente.');
+  }
 
-    if (!user) {
-      redirectWithError('/login', 'E-mail ou senha incorretos');
-    }
+  if (!user) {
+    redirectWithError('/login', 'E-mail ou senha incorretos');
+  }
 
-    const passwordMatches = await bcrypt.compare(password, user.password);
-    if (!passwordMatches) {
-      redirectWithError('/login', 'E-mail ou senha incorretos');
-    }
+  const passwordMatches = await bcrypt.compare(password, user.password);
+  if (!passwordMatches) {
+    redirectWithError('/login', 'E-mail ou senha incorretos');
+  }
 
-    const store = user.stores && user.stores.length > 0 ? user.stores[0] : null;
+  const store = user.stores && user.stores.length > 0 ? user.stores[0] : null;
 
-    if (!store) {
-      await createSession({
-        userId: user.id,
-        storeId: '',
-        email: user.email,
-        name: user.name,
-      });
-      redirect('/setup');
-    }
-
+  if (!store) {
     await createSession({
       userId: user.id,
-      storeId: store.id,
+      storeId: '',
       email: user.email,
       name: user.name,
     });
-  } catch (error) {
-    // Evita que erros de banco de dados estourem o servidor
-    if ((error as Error).message?.includes('NEXT_REDIRECT')) {
-      throw error; // Permite que o Next.js faça o redirecionamento normalmente
-    }
-    console.error('Erro no login:', error);
-    redirectWithError('/login', 'Ocorreu um erro no servidor. Tente novamente.');
+    redirect('/setup');
   }
+
+  await createSession({
+    userId: user.id,
+    storeId: store.id,
+    email: user.email,
+    name: user.name,
+  });
 
   redirect('/');
 }
