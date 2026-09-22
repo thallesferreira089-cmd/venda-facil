@@ -34,40 +34,47 @@ export async function loginAction(formData: FormData) {
 
   const { email, password } = parsed.data;
 
-  const user = await prisma.user.findUnique({
-    where: { email },
-    include: { stores: { take: 1, orderBy: { createdAt: 'asc' } } },
-  });
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { stores: { take: 1, orderBy: { createdAt: 'asc' } } },
+    });
 
-  if (!user) {
-    redirectWithError('/login', 'E-mail ou senha incorretos');
-  }
+    if (!user) {
+      redirectWithError('/login', 'E-mail ou senha incorretos');
+    }
 
-  const passwordMatches = await bcrypt.compare(password, user.password);
-  if (!passwordMatches) {
-    redirectWithError('/login', 'E-mail ou senha incorretos');
-  }
+    const passwordMatches = await bcrypt.compare(password, user.password);
+    if (!passwordMatches) {
+      redirectWithError('/login', 'E-mail ou senha incorretos');
+    }
 
-  const store = user.stores[0];
+    const store = user.stores && user.stores.length > 0 ? user.stores[0] : null;
 
-  // Se não houver loja criada, envia para a configuração da loja
-  if (!store) {
+    if (!store) {
+      await createSession({
+        userId: user.id,
+        storeId: '',
+        email: user.email,
+        name: user.name,
+      });
+      redirect('/setup');
+    }
+
     await createSession({
       userId: user.id,
-      storeId: '',
+      storeId: store.id,
       email: user.email,
       name: user.name,
     });
-    redirect('/setup');
+  } catch (error) {
+    // Evita que erros de banco de dados estourem o servidor
+    if ((error as Error).message?.includes('NEXT_REDIRECT')) {
+      throw error; // Permite que o Next.js faça o redirecionamento normalmente
+    }
+    console.error('Erro no login:', error);
+    redirectWithError('/login', 'Ocorreu um erro no servidor. Tente novamente.');
   }
-
-  // Se a loja existir, guarda o storeId válido e entra na aplicação
-  await createSession({
-    userId: user.id,
-    storeId: store.id,
-    email: user.email,
-    name: user.name,
-  });
 
   redirect('/');
 }
@@ -86,33 +93,41 @@ export async function registerAction(formData: FormData) {
 
   const { name, storeName, email, password } = parsed.data;
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    redirectWithError('/register', 'Este e-mail já está cadastrado');
-  }
+  try {
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      redirectWithError('/register', 'Este e-mail já está cadastrado');
+    }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-  const user = await prisma.user.create({
-    data: {
-      name,
-      email,
-      password: hashedPassword,
-      stores: {
-        create: { name: storeName },
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        stores: {
+          create: { name: storeName },
+        },
       },
-    },
-    include: { stores: true },
-  });
+      include: { stores: true },
+    });
 
-  const store = user.stores[0];
+    const store = user.stores[0];
 
-  await createSession({
-    userId: user.id,
-    storeId: store.id,
-    email: user.email,
-    name: user.name,
-  });
+    await createSession({
+      userId: user.id,
+      storeId: store.id,
+      email: user.email,
+      name: user.name,
+    });
+  } catch (error) {
+    if ((error as Error).message?.includes('NEXT_REDIRECT')) {
+      throw error;
+    }
+    console.error('Erro no registro:', error);
+    redirectWithError('/register', 'Erro ao criar conta.');
+  }
 
   redirect('/setup');
 }
@@ -124,10 +139,14 @@ export async function setupStoreAction(formData: FormData) {
   const segment = formData.get('segment')?.toString() || null;
   const currency = formData.get('currency')?.toString() || 'BRL';
 
-  await prisma.store.update({
-    where: { id: session.storeId },
-    data: { segment, currency },
-  });
+  try {
+    await prisma.store.update({
+      where: { id: session.storeId },
+      data: { segment, currency },
+    });
+  } catch (error) {
+    console.error('Erro no setup da loja:', error);
+  }
 
   redirect('/');
 }
