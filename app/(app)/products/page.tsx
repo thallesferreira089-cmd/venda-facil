@@ -24,7 +24,7 @@ export default async function ProductsPage() {
         price: Number(formData.get('price')),
         stock: Number(formData.get('stock')),
         storeId: session.storeId
-      }
+      } as any
     });
 
     revalidatePath('/products');
@@ -43,7 +43,6 @@ export default async function ProductsPage() {
     <div className="p-6 max-w-4xl">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Produtos</h1>
 
-      {/* Formulário Novo Produto */}
       <div className="bg-white p-4 rounded-xl border border-gray-200 mb-6 shadow-sm">
         <h2 className="font-bold text-gray-900 mb-4">Novo produto</h2>
         <form action={addProduct} className="space-y-4">
@@ -59,9 +58,8 @@ export default async function ProductsPage() {
         </form>
       </div>
 
-      {/* Lista de Produtos */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm divide-y divide-gray-100">
-        {products.map((product) => (
+        {products.map((product: any) => (
           <div key={product.id} className="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
             <div>
               <p className="font-bold text-gray-900">{product.name}</p>
@@ -70,12 +68,12 @@ export default async function ProductsPage() {
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <p className="font-bold text-gray-900">R$ {Number(product.price).toFixed(2)}</p>
+              <p className="font-bold text-gray-900">R$ {Number(product.price ?? product.sellPrice ?? 0).toFixed(2)}</p>
               
               <form action={deleteProduct}>
                 <input type="hidden" name="id" value={product.id} />
                 <button type="submit" className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Apagar">
-                  <Trash2 className="w-5 h-5" />
+                  <Trash2 className="w-5 h-5"/>
                 </button>
               </form>
             </div>
