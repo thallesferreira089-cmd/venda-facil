@@ -1,63 +1,64 @@
-'use client';
+import { getSession } from '@/lib/auth';
+import { redirect } from 'next/navigation';
+import { setupStoreAction } from '@/actions/auth';
+import { Store, ArrowRight } from 'lucide-react';
 
-import { Rocket } from 'lucide-react';
-import { setupStoreAction } from '../../../actions/auth';
+export default async function SetupPage() {
+  const session = await getSession();
 
-export default function SetupPage() {
+  // Se não houver sessão ativa, envia para login
+  if (!session) {
+    redirect('/login');
+  }
+
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-blue-50 p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-        <div className="flex flex-col items-center mb-8 text-center">
-          <div className="bg-blue-100 p-4 rounded-full mb-4">
-            <Rocket className="w-8 h-8 text-blue-600" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">Vamos configurar sua loja 🚀</h1>
-          <p className="text-gray-500 text-sm mt-2">
-            Só precisamos de mais alguns detalhes para deixar tudo pronto para você.
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4">
+      <div className="max-w-md w-full bg-white p-8 rounded-2xl border border-gray-100 shadow-sm space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Configurar Loja</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Defina o segmento e moeda para começar a vender.
           </p>
         </div>
 
-        <form action={setupStoreAction} className="space-y-5">
+        <form action={setupStoreAction} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Segmento da Loja</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Segmento da Loja
+            </label>
             <select
               name="segment"
-              className="w-full h-12 px-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-600 outline-none bg-white"
+              className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none text-gray-900 bg-white"
             >
-              <option value="">Selecione um segmento</option>
-              <option value="roupas">Roupas e Moda</option>
+              <option value="">Selecione um segmento (opcional)</option>
+              <option value="roupas">Roupas e Vestuário</option>
+              <option value="eletronicos">Eletrónicos e Tecnologia</option>
               <option value="cosmeticos">Cosméticos e Beleza</option>
-              <option value="eletronicos">Eletrônicos</option>
-              <option value="acessorios">Acessórios</option>
-              <option value="outros">Outros</option>
+              <option value="alimentacao">Alimentação / Restauração</option>
+              <option value="outro">Outro</option>
             </select>
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Moeda</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Moeda
+            </label>
             <select
               name="currency"
-              className="w-full h-12 px-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-600 outline-none bg-white"
+              defaultValue="BRL"
+              className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none text-gray-900 bg-white"
             >
-              <option value="BRL">Real (R$)</option>
-              <option value="USD">Dólar (US$)</option>
+              <option value="BRL">BRL (R$)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="USD">USD ($)</option>
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Forma principal de venda</label>
-            <select
-              name="salesChannel"
-              className="w-full h-12 px-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-600 outline-none bg-white"
-            >
-              <option value="whatsapp">WhatsApp</option>
-              <option value="instagram">Instagram</option>
-              <option value="loja_fisica">Loja Física / Pessoalmente</option>
-            </select>
-          </div>
+
           <button
             type="submit"
-            className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors mt-6"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
-            Concluir configuração
+            Concluir Configuração <ArrowRight className="w-5 h-5" />
           </button>
         </form>
       </div>

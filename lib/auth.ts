@@ -1,66 +1,56 @@
-import 'server-only';
-import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
+import { SignJWT, jwtVerify } from 'jose';
 
-const COOKIE_NAME = 'vf_session';
-const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 7; // 7 dias
+const secretKey = process.env.JWT_SECRET || 'secret-key-venda-facil-12345';
+const key = new TextEncoder().encode(secretKey);
 
-function getSecretKey() {
-  const secret = process.env.SESSION_SECRET;
-  if (!secret || secret.length < 16) {
-    throw new Error(
-      'SESSION_SECRET não configurado (ou muito curto) no .env. Defina uma string aleatória com pelo menos 32 caracteres.'
-    );
-  }
-  return new TextEncoder().encode(secret);
-}
-
-export type SessionPayload = {
+export interface SessionData {
   userId: string;
   storeId: string;
   email: string;
-  name: string;
-};
+  name?: string;
+}
 
-async function encrypt(payload: SessionPayload) {
-  return new SignJWT({ ...payload })
+export async function createSession(data: SessionData) {
+  const token = await new SignJWT({ ...data })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime(`${SESSION_DURATION_SECONDS}s`)
-    .sign(getSecretKey());
-}
+    .setExpirationTime('7d')
+    .sign(key);
 
-async function decrypt(token: string): Promise<SessionPayload | null> {
-  try {
-    const { payload } = await jwtVerify(token, getSecretKey(), {
-      algorithms: ['HS256'],
-    });
-    return payload as unknown as SessionPayload;
-  } catch {
-    return null;
-  }
-}
-
-export async function createSession(data: SessionPayload) {
-  const token = await encrypt(data);
   const cookieStore = await cookies();
-  cookieStore.set(COOKIE_NAME, token, {
+  cookieStore.set('session', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: SESSION_DURATION_SECONDS,
+    maxAge: 60 * 60 * 24 * 7, // 7 dias
   });
 }
 
-export async function getSession(): Promise<SessionPayload | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
-  if (!token) return null;
-  return decrypt(token);
+export async function getSession(): Promise<SessionData | null> {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('session')?.value;
+
+    if (!token) return null;
+
+    const { payload } = await jwtVerify(token, key, {
+      algorithms: ['HS256'],
+    });
+
+    return payload as unknown as SessionData;
+  } catch (error) {
+    // Se o token for inválido, expirado ou der erro de leitura, limpa a sessão sem derrubar o servidor
+    return null;
+  }
 }
 
 export async function destroySession() {
-  const cookieStore = await cookies();
-  cookieStore.delete(COOKIE_NAME);
+  try {
+    const cookieStore = await cookies();
+    cookieStore.delete('session');
+  } catch (error) {
+    console.error('Erro ao destruir sessão:', error);
+  }
 }
