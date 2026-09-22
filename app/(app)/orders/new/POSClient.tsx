@@ -20,7 +20,7 @@ export default function POSClient({ products, customers }: { products: any[], cu
   const router = useRouter();
 
   const addToCart = (product: any) => {
-    const numPrice = Number(product.price ?? product.sellPrice ?? 0);
+    const numPrice = Number(product.salePrice ?? 0);
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
@@ -88,7 +88,6 @@ export default function POSClient({ products, customers }: { products: any[], cu
         <div className="grid grid-cols-2 gap-3">
           {products.map(product => {
             const cartItem = cart.find(item => item.id === product.id);
-            const price = product.price ?? product.sellPrice ?? 0;
             return (
               <button
                 key={product.id}
@@ -100,7 +99,7 @@ export default function POSClient({ products, customers }: { products: any[], cu
               >
                 <h3 className="font-bold text-gray-900">{product.name}</h3>
                 <p className="text-xs text-gray-500 mb-2">Stock: {product.stock}</p>
-                <p className="font-bold text-blue-600">R$ {Number(price).toFixed(2)}</p>
+                <p className="font-bold text-blue-600">R$ {Number(product.salePrice).toFixed(2)}</p>
 
                 {cartItem && (
                   <span className="absolute bottom-4 right-4 bg-blue-600 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shadow-sm">
@@ -128,7 +127,7 @@ export default function POSClient({ products, customers }: { products: any[], cu
                     <Minus className="w-4 h-4" />
                   </button>
                   <span className="text-sm font-bold w-6 text-center">{item.quantity}</span>
-                  <button onClick={() => addToCart({ id: item.id, name: item.name, price: item.price, stock: item.stock })} className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors">
+                  <button onClick={() => addToCart({ id: item.id, name: item.name, salePrice: item.price, stock: item.stock })} className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors">
                     <Plus className="w-4 h-4" />
                   </button>
                   <button onClick={() => removeFromCart(item.id)} className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 ml-2 transition-colors">

@@ -18,13 +18,19 @@ export default async function ProductsPage() {
     const session = await getSession();
     if (!session?.storeId) return;
     
+    const name = formData.get('name') as string;
+    const salePrice = Number(formData.get('price'));
+    const costPrice = formData.get('cost') ? Number(formData.get('cost')) : 0;
+    const stock = Number(formData.get('stock'));
+
     await prisma.product.create({
       data: {
-        name: formData.get('name') as string,
-        price: Number(formData.get('price')),
-        stock: Number(formData.get('stock')),
+        name,
+        salePrice,
+        costPrice,
+        stock,
         storeId: session.storeId
-      } as any
+      }
     });
 
     revalidatePath('/products');
@@ -59,16 +65,16 @@ export default async function ProductsPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm divide-y divide-gray-100">
-        {products.map((product: any) => (
+        {products.map((product) => (
           <div key={product.id} className="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
             <div>
               <p className="font-bold text-gray-900">{product.name}</p>
               <p className="text-xs text-gray-500 mt-1">
-                Estoque: {product.stock} {product.stock <= 5 && <span className="text-red-500 font-semibold">- baixo</span>}
+                Estoque: {product.stock} {product.stock <= product.minimumStock && <span className="text-red-500 font-semibold">- baixo</span>}
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <p className="font-bold text-gray-900">R$ {Number(product.price ?? product.sellPrice ?? 0).toFixed(2)}</p>
+              <p className="font-bold text-gray-900">R$ {Number(product.salePrice).toFixed(2)}</p>
               
               <form action={deleteProduct}>
                 <input type="hidden" name="id" value={product.id} />
